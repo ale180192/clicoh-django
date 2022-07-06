@@ -53,13 +53,21 @@ class OrderModelSerializer(serializers.ModelSerializer):
     order_lines = OrderDetailSerializer(
         many=True, source="orders_detail", read_only=True
     )
+    total = serializers.SerializerMethodField()
+    total_usd = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Order
         fields = "__all__"
 
-    def validate(self, data):
+    def validate(self, data: str) -> dict:
         data["user"] = self.context["request"].user
         return data
 
+
+    def get_total(self, instance: models.Order) -> float:
+        return instance.get_total()
+
+    def get_total_usd(self, instance: models.Order) -> float:
+        return instance.get_total_usd()
 

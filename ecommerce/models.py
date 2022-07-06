@@ -1,7 +1,11 @@
 from uuid import uuid4
+import decimal
 
 from django.db import models
+from django.db.models import Sum
 from django.contrib.auth import get_user_model
+
+from ecommerce.layer_service.rate_exchange import RateExchange
 
 User = get_user_model()
 
@@ -20,6 +24,21 @@ class Order(models.Model):
     )
     user = models.ForeignKey(to=User, on_delete=models.SET_NULL, null=True)
     date_time = models.DateTimeField(auto_now_add=True)
+
+    def get_total(self) -> decimal.Decimal:
+        total = decimal.Decimal()
+        for line in self.orders_detail.all():
+            total += line.product.price * line.quantity
+
+        return total
+
+    def get_total_usd(self) -> decimal.Decimal:
+        total = decimal.Decimal()
+        for line in self.orders_detail.all():
+            total += line.product.price * line.quantity
+
+        rate = RateExchange.fetch_rate_usd_blue()
+        return total * rate
 
 class OrderDetail(models.Model):
     order = models.ForeignKey(
