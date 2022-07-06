@@ -1,7 +1,7 @@
+from django.db.models import F
 from rest_framework.decorators import action
 from rest_framework.permissions import (
-    IsAuthenticated,
-    IsAdminUser,
+    IsAuthenticated
 )
 
 from knox.auth import TokenAuthentication
@@ -20,7 +20,7 @@ class ProductsViewSet(BaseModelViewSet):
         Returns all Products records.
     """
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAdminUser, IsAuthenticated]
+    permission_classes = [IsAuthenticated, ]
     queryset = models.Product.objects.all()
     serializer_class = serializers.ProductModelSerializer
 
@@ -31,7 +31,45 @@ class ProductsViewSet(BaseModelViewSet):
         ser.is_valid(raise_exception=True)
         ser.save()
         return api_utils.response_success(data=ser.data)
-        
 
+
+class OrdersViewSet(BaseModelViewSet):
+    """
+        post:
+        Create a single Order record on DB with data passed on request.
+        get:
+        Returns all Orders records.
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, ]
+    queryset = models.Order.objects.all()
+    serializer_class = serializers.OrderModelSerializer
+        
+    @action(detail=True, methods=['patch'], url_path="add_order_line")
+    def add_order_line(self, request, pk):
+        data = request.data
+        data["order"] = pk
+        ser = serializers.OrderDetailSerializer(data=data)
+        ser.is_valid(raise_exception=True)
+        order_line = ser.save()
+        models.Product.objects \
+            .filter(pk=order_line.product.id) \
+            .update(stock=F("stock") - order_line.quantity)
+        order = self.get_object()
+        serializer_order = serializers.OrderModelSerializer(order)
+        return api_utils.response_success(data=serializer_order.data)
+
+    @action(detail=True, methods=['patch'], url_path="remove_order_line")
+    def remove_order_line(self, request, pk):
+        order = self.get_object()
+        data = request.data
+        product = models.Product.objects.get(pk=data.get("product"))
+        order_line = models.OrderDetail.objects.get(product=product, order=order)
+        order_line.delete()
+        models.Product.objects \
+            .filter(pk=order_line.product.id) \
+            .update(stock=F("stock") + order_line.quantity)
+        serializer_order = serializers.OrderModelSerializer(order)
+        return api_utils.response_success(data=serializer_order.data)
 
 

@@ -65,12 +65,18 @@ def _handle_permission_error(exc, context, response):
 
 
 def _handle_validation_error(exc, context, response):
-    if hasattr(context['view'], 'validation_handler') and context['view'].validation_handler:
+    if hasattr(context['view'], 'validation_handler') \
+        and context['view'].validation_handler:
+        if not hasattr(exc, "detail"):
+            errors = str(exc)
+        else:
+            errors=exc.detail.serializer.errors
+
         return response_error(
             ErrorCode.BAD_REQUEST,
             status.HTTP_400_BAD_REQUEST,
-            errors=exc.detail.serializer.errors
-    )
+            errors=errors
+        )
 
     return response
 

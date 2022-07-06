@@ -1,7 +1,9 @@
-from dataclasses import field
 from rest_framework import serializers
+from rest_framework import status
 
 from . import models
+from app.api_exceptions import CustomAPIException
+from app.api_error_codes import ErrorCode
 
 class ProductModelSerializer(serializers.ModelSerializer):
     """
@@ -27,4 +29,37 @@ class ProductUpdateStockModelSerializer(serializers.ModelSerializer):
             "price": {"read_only": True},
         }
 
-       
+
+
+class OrderDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.OrderDetail
+        fields = "__all__"
+
+    def validate(self, data):
+        product = data.get("product")
+        if product.stock < data.get("quantity"):
+            msg = f"it's only {product.stock} items availables."
+            raise CustomAPIException(
+                error=ErrorCode.OUT_OF_STOCK,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_detail=msg
+            )
+
+        return data
+
+class OrderModelSerializer(serializers.ModelSerializer):
+    order_lines = OrderDetailSerializer(
+        many=True, source="orders_detail", read_only=True
+    )
+
+    class Meta:
+        model = models.Order
+        fields = "__all__"
+
+    def validate(self, data):
+        data["user"] = self.context["request"].user
+        return data
+
+

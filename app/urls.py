@@ -17,13 +17,19 @@ from django.urls import path, include
 
 from knox import views as knox_views
 from users.views import LoginView
-from ecommerce.views import ProductsViewSet
+from ecommerce.views import (
+    ProductsViewSet,
+    OrdersViewSet
+)
 
 from rest_framework.routers import SimpleRouter
 
 router = SimpleRouter()
 router.register(
     "api/ecommerce/v1/products", ProductsViewSet, basename="products"
+)
+router.register(
+    "api/ecommerce/v1/orders", OrdersViewSet, basename="orders"
 )
 
 urlpatterns = [
