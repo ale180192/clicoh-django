@@ -13,13 +13,23 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.urls import path
+from django.urls import path, include
 
 from knox import views as knox_views
 from users.views import LoginView
+from ecommerce.views import ProductsViewSet
+
+from rest_framework.routers import SimpleRouter
+
+router = SimpleRouter()
+router.register(
+    "api/ecommerce/v1/products", ProductsViewSet, basename="products"
+)
 
 urlpatterns = [
-    path(r'login', LoginView.as_view(), name='knox_login'),
-    path(r'logout', knox_views.LogoutView.as_view(), name='knox_logout'),
-    path(r'logoutall', knox_views.LogoutAllView.as_view(), name='knox_logoutall'),
+    path('login', LoginView.as_view(), name='knox_login'),
+    path('logout', knox_views.LogoutView.as_view(), name='knox_logout'),
+    path('logoutall', knox_views.LogoutAllView.as_view(), name='knox_logoutall'),
 ]
+
+urlpatterns += router.urls
