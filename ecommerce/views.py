@@ -86,32 +86,20 @@ class OrdersViewSet(BaseModelViewSet):
         product = models.Product.objects.get(pk=data.get("product"))
         order_line = models.OrderDetail.objects.get(product=product, order=order)
         diff = order_line.quantity - data["quantity"]
-        if diff > 0:
-            is_added = False
-        else:
-            is_added = True
-
-        if is_added:
-            if product.stock >= diff:
-                models.Product.objects \
-                    .filter(pk=order_line.product.id) \
-                    .update(stock=F("stock") - diff)
-                order_line.quantity += diff
-                order_line.save()
-            else:
-                msg = f"it's only {product.stock} items availables."
-                logger.error(msg)
-                raise CustomAPIException(
-                error=ErrorCode.OUT_OF_STOCK,
-                status_code=status.HTTP_400_BAD_REQUEST,
-                error_detail=msg
-            )
-        else:
+        if product.stock >= diff:
             models.Product.objects \
-                    .filter(pk=order_line.product.id) \
-                    .update(stock=F("stock") + diff)
+                .filter(pk=order_line.product.id) \
+                .update(stock=F("stock") + diff)
             order_line.quantity -= diff
             order_line.save()
+        else:
+            msg = f"it's only {product.stock} items availables."
+            logger.error(msg)
+            raise CustomAPIException(
+            error=ErrorCode.OUT_OF_STOCK,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_detail=msg
+        )
 
         serializer_order = serializers.OrderModelSerializer(order)
         return api_utils.response_success(data=serializer_order.data)

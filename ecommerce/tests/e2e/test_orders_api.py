@@ -89,11 +89,10 @@ class OrderApiTests(APITestCase):
         self.assertTrue(len(response_data["order_lines"]), 1)
         url = reverse("ecommerce:orders-update-order-line-quantity", args=[str(order.id),])
         # remove 2 items
-        data["quantity"] = 3
+        data["quantity"] = 8
         response = self.client.patch(url, data, format="json")
-        self.assertTrue(len(response_data["order_lines"]), 0)
         product.refresh_from_db()
-        self.assertEqual(product.stock, 5)
+        self.assertEqual(product.stock, 0)
 
 
 
