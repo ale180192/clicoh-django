@@ -36,9 +36,6 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.OrderDetail
         fields = "__all__"
-        # extra_kwargs = {
-        #     "order": {"write_only"},
-        # }
 
     def validate(self, data):
         product = data.get("product")
