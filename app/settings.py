@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+
+import django_heroku
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +28,8 @@ SECRET_KEY = 'django-insecure-&2wnj70vxxxa7qy9-ao4-7@o6swk8ryulf$l=9ch7&9luk8%9#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# only for debug
+ALLOWED_HOSTS = ["0.0.0.0", "localhost", "https://clicoh-alex.herokuapp.com"]
 
 
 # Application definition
@@ -121,6 +125,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 APPEND_SLASH=False
 
@@ -149,3 +154,5 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ('knox.auth.TokenAuthentication',),
     'EXCEPTION_HANDLER': 'app.api_utils.custom_exception_handler',
 }
+
+django_heroku.settings(locals())
