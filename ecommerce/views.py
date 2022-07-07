@@ -1,16 +1,22 @@
+import logging
+
 from django.db.models import F
 from rest_framework.decorators import action
 from rest_framework.permissions import (
     IsAuthenticated
 )
+from rest_framework import status
 
 from knox.auth import TokenAuthentication
+from app.api_error_codes import ErrorCode
+from app.api_exceptions import CustomAPIException
 
 from app.base_views import BaseModelViewSet
 from app import api_utils
 from . import models
 from . import serializers
 
+logger = logging.getLogger(__name__)
 
 class ProductsViewSet(BaseModelViewSet):
     """
@@ -71,5 +77,44 @@ class OrdersViewSet(BaseModelViewSet):
             .update(stock=F("stock") + order_line.quantity)
         serializer_order = serializers.OrderModelSerializer(order)
         return api_utils.response_success(data=serializer_order.data)
+
+    @action(detail=True, methods=['patch'], url_path="update_order_line_quantity")
+    def update_order_line_quantity(self, request, pk):
+        data = request.data
+        data["order"] = pk
+        order = self.get_object()
+        product = models.Product.objects.get(pk=data.get("product"))
+        order_line = models.OrderDetail.objects.get(product=product, order=order)
+        diff = order_line.quantity - data["quantity"]
+        if diff > 0:
+            is_added = False
+        else:
+            is_added = True
+
+        if is_added:
+            if product.stock >= diff:
+                models.Product.objects \
+                    .filter(pk=order_line.product.id) \
+                    .update(stock=F("stock") - diff)
+                order_line.quantity += diff
+                order_line.save()
+            else:
+                msg = f"it's only {product.stock} items availables."
+                logger.error(msg)
+                raise CustomAPIException(
+                error=ErrorCode.OUT_OF_STOCK,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_detail=msg
+            )
+        else:
+            models.Product.objects \
+                    .filter(pk=order_line.product.id) \
+                    .update(stock=F("stock") + diff)
+            order_line.quantity -= diff
+            order_line.save()
+
+        serializer_order = serializers.OrderModelSerializer(order)
+        return api_utils.response_success(data=serializer_order.data)
+
 
 

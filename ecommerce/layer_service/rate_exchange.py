@@ -13,6 +13,7 @@ class RateExchange():
         """
         Gets the exchange rate from third party provider.
         """
+        logger.info(f"Call to {cls.URL}")
         response = requests.get(cls.URL)
 
         if response.status_code != 200:

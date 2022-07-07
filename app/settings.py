@@ -134,21 +134,6 @@ APPEND_SLASH=False
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# logger
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
-    },
-}
-
 # rest framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ('knox.auth.TokenAuthentication',),
@@ -156,3 +141,61 @@ REST_FRAMEWORK = {
 }
 
 django_heroku.settings(locals())
+
+# logger
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': '{asctime} {levelname} [{module}] [{filename}:{lineno}] | {message}',
+            'style': '{',
+        },
+        'apm-correlation': {
+            'format': '%(asctime)s %(levelname)s [%(module)s] [%(filename)s:%(lineno)s] | %(message)s',
+            'class': 'elasticapm.handlers.logging.Formatter',
+        }
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            # 'formatter': 'apm-correlation',
+        },
+        'elasticapm': {
+            'level': 'ERROR',
+            'class': 'elasticapm.contrib.django.handlers.LoggingHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console', ],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django.security.DisallowedHost': {
+            'handlers': [],
+            'level': 'FATAL',
+            'propagate': True,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'app': {
+            'handlers': ['console', ],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'ecommerce': {
+            'handlers': ['console', ],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'users': {
+            'handlers': ['console', ],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    }
+}
